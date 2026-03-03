@@ -2561,7 +2561,7 @@ function handleSummaryOutput(choice) {
  * แสดงข้อความเริ่มต้นในตารางสรุปรายวัน
  */
 function resetDailySummaryTable() {
-    const tbody = document.getElementById("dailySummaryTableBody");
+    const tbody = document.getElementById("daily-summary-body");
     if (!tbody) return;
 
     tbody.innerHTML = `
@@ -2618,7 +2618,7 @@ function calculateDailySummaries() {
  * แสดงสรุปแต่ละวันเป็นตาราง (ฟังก์ชันหลัก)
  */
 function renderDailySummaryTable() {
-    const tbody = document.getElementById("dailySummaryTableBody");
+    const tbody = document.getElementById("daily-summary-body");
     if (!tbody) return;
     
     if (!dailySummaryData || Object.keys(dailySummaryData).length === 0) {
