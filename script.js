@@ -153,7 +153,9 @@ function getCurrentUserIdentifier() {
  */
 function togglePassword() {
     const passwordInput = document.getElementById('loginPassword');
-    passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    if (passwordInput) {
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    }
 }
 
 /**
@@ -519,7 +521,7 @@ function setupSummaryControlsAndSave() {
             showToast("❌ ขออภัย, ไม่สามารถบันทึกเป็นรูปภาพได้", 'error');
         }).finally(() => {
             if(actionButtons) actionButtons.style.display = '';
-            controlGroups.forEach(el => el.style.display = '';
+            controlGroups.forEach(el => el.style.display = '');
             if(closeBtn) closeBtn.style.display = '';
             modalContentContainer.style.padding = '';
         });
@@ -535,7 +537,7 @@ function setupSummaryControlsAndSave() {
         const closeBtn = document.querySelector('.modal-close-btn');
 
         if(actionButtons) actionButtons.style.display = 'none';
-        controlGroups.forEach(el => el.style.display = 'none';
+        controlGroups.forEach(el => el.style.display = 'none');
         if(closeBtn) closeBtn.style.display = 'none';
 
         modalContentContainer.style.padding = '5px 2px';
@@ -572,7 +574,7 @@ function setupSummaryControlsAndSave() {
             }
         } finally {
             if(actionButtons) actionButtons.style.display = '';
-            controlGroups.forEach(el => el.style.display = '';
+            controlGroups.forEach(el => el.style.display = '');
             if(closeBtn) closeBtn.style.display = '';
             modalContentContainer.style.padding = '';
         }
@@ -4371,3 +4373,157 @@ deleteRecordsByDate = async function() {
     await originalDeleteRecordsByDate.apply(this, arguments);
     refreshDailySummaries();
 };
+
+// ==============================================
+// ฟังก์ชันสรุปเพิ่มเติม (ต้องมีเพื่อให้ปุ่มทำงาน)
+// ==============================================
+
+function summarizeToday() {
+    if (!currentAccount) {
+        showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
+        return;
+    }
+    
+    const today = new Date();
+    const startDate = new Date(today.setHours(0, 0, 0, 0));
+    const endDate = new Date(today.setHours(23, 59, 59, 999));
+    
+    const summaryResult = generateSummaryData(startDate, endDate);
+    if (!summaryResult) return;
+    
+    const thaiDateString = today.toLocaleDateString('th-TH', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    summaryContext = {
+        summaryResult: summaryResult,
+        title: 'สรุปข้อมูลวันนี้',
+        dateString: thaiDateString,
+        remark: 'สรุปประจำวัน',
+        type: 'today',
+        thaiDateString: thaiDateString,
+        headerLine1: 'สรุปวันนี้ :',
+        headerLine2: 'เงินในบัญชีวันนี้มี =',
+        headerLine3: 'รายการวันนี้'
+    };
+    
+    openSummaryOutputModal();
+}
+
+function summarizeAll() {
+    if (!currentAccount) {
+        showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
+        return;
+    }
+    
+    const startDate = new Date(2000, 0, 1);
+    const endDate = new Date(2100, 11, 31, 23, 59, 59, 999);
+    
+    const summaryResult = generateSummaryData(startDate, endDate);
+    if (!summaryResult) return;
+    
+    summaryContext = {
+        summaryResult: summaryResult,
+        title: 'สรุปข้อมูลทั้งหมด',
+        dateString: 'ตั้งแต่อดีตถึงปัจจุบัน',
+        remark: 'สรุปทั้งหมด',
+        type: 'all',
+        thaiDateString: 'ตั้งแต่อดีตถึงปัจจุบัน',
+        headerLine1: 'สรุปทั้งหมด :',
+        headerLine2: 'เงินในบัญชีทั้งหมด =',
+        headerLine3: 'รายการทั้งหมด'
+    };
+    
+    openSummaryOutputModal();
+}
+
+function summarizeByDayMonth() {
+    if (!currentAccount) {
+        showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
+        return;
+    }
+    
+    const selectedDateStr = document.getElementById('customDayMonth').value;
+    if (!selectedDateStr) {
+        showToast("❌ กรุณาเลือกวันที่", 'error');
+        return;
+    }
+    
+    const startDate = new Date(selectedDateStr);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(selectedDateStr);
+    endDate.setHours(23, 59, 59, 999);
+    
+    const summaryResult = generateSummaryData(startDate, endDate);
+    if (!summaryResult) return;
+    
+    const thaiDateString = startDate.toLocaleDateString('th-TH', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    summaryContext = {
+        summaryResult: summaryResult,
+        title: 'สรุปข้อมูลวันที่เลือก',
+        dateString: selectedDateStr,
+        remark: 'สรุปตามวันที่เลือก',
+        type: 'byDayMonth',
+        thaiDateString: thaiDateString,
+        headerLine1: 'สรุปวันที่เลือก :',
+        headerLine2: 'เงินในบัญชีวันนี้มี =',
+        headerLine3: 'รายการวันที่เลือก'
+    };
+    
+    openSummaryOutputModal();
+}
+
+function summarize() {
+    if (!currentAccount) {
+        showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
+        return;
+    }
+    
+    const startDateStr = document.getElementById('startDate').value;
+    const endDateStr = document.getElementById('endDate').value;
+    const showDetails = document.getElementById('showDetailsRange').checked;
+    
+    if (!startDateStr || !endDateStr) {
+        showToast("❌ กรุณาเลือกวันที่เริ่มต้นและวันที่สิ้นสุด", 'error');
+        return;
+    }
+    
+    const startDate = new Date(startDateStr);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
+    
+    if (startDate > endDate) {
+        showToast("❌ วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด", 'error');
+        return;
+    }
+    
+    const summaryResult = generateSummaryData(startDate, endDate);
+    if (!summaryResult) return;
+    
+    const startThai = startDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const endThai = endDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const thaiDateString = `${startThai} ถึง ${endThai}`;
+    
+    summaryContext = {
+        summaryResult: summaryResult,
+        title: 'สรุปข้อมูลตามช่วงวันที่',
+        dateString: `${startDateStr} ถึง ${endDateStr}`,
+        remark: 'สรุปตามช่วงวันที่',
+        type: 'range',
+        thaiDateString: thaiDateString,
+        headerLine1: 'สรุปช่วงวันที่ :',
+        headerLine2: 'เงินในบัญชีทั้งหมด =',
+        headerLine3: 'รายการในช่วงวันที่',
+        showDetails: showDetails
+    };
+    
+    openSummaryOutputModal();
+}
