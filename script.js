@@ -976,7 +976,7 @@ function setupAccountListeners(SHARED_ID) {
                     if (currentAccount === accName) {
                         console.log(`🔄 บัญชีที่เปิดอยู่ (${accName}) มีการเปลี่ยนแปลง รีเฟรชตาราง...`);
                         displayRecords();
-                        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง
+                        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
                         calculateDailySummaries();
                     } else {
                          console.log(`☁️ บัญชี ${accName} อัปเดตเบื้องหลังเรียบร้อย`);
@@ -1181,7 +1181,7 @@ async function addEntry() {
     }
     
     displayRecords();
-    // ✅ อัปเดตสรุปแต่ละวันเมื่อเพิ่มข้อมูล
+    // ✅ อัปเดตสรุปแต่ละวันเมื่อเพิ่มข้อมูล (เฉพาะข้อมูล ไม่แสดงผล)
     calculateDailySummaries();
     
     document.getElementById('description').value = '';
@@ -1275,7 +1275,7 @@ function changeAccount() {
     displayRecords();
     updateMultiAccountSelector();
     updateImportAccountSelect();
-    // ✅ คำนวณและแสดงสรุปแต่ละวันสำหรับบัญชีที่เลือก
+    // ✅ คำนวณและแสดงสรุปแต่ละวันสำหรับบัญชีที่เลือก (เฉพาะข้อมูล ไม่แสดงผล)
     calculateDailySummaries();
     
     if (currentAccount) {
@@ -1332,7 +1332,7 @@ async function editAccount() {
             document.getElementById('accountName').textContent = currentAccount; 
             displayRecords(); 
             updateMultiAccountSelector(); 
-            // ✅ อัปเดตสรุปแต่ละวันเมื่อเปลี่ยนชื่อบัญชี
+            // ✅ อัปเดตสรุปแต่ละวันเมื่อเปลี่ยนชื่อบัญชี (เฉพาะข้อมูล ไม่แสดงผล)
             calculateDailySummaries();
             
             showToast(`✓ แก้ไขชื่อบัญชีเป็น "${newAccountName}" สำเร็จ`, 'success'); 
@@ -1378,7 +1378,7 @@ async function deleteAccount() {
             updateAccountSelect(); 
             displayRecords(); 
             updateMultiAccountSelector(); 
-            // ✅ อัปเดตสรุปแต่ละวันเมื่อลบบัญชี
+            // ✅ อัปเดตสรุปแต่ละวันเมื่อลบบัญชี (เฉพาะข้อมูล ไม่แสดงผล)
             calculateDailySummaries();
             
             showToast(`✓ ลบบัญชี "${accountToDelete}" สำเร็จ`, 'success'); 
@@ -1638,7 +1638,7 @@ function updateRecordsType(oldType, newType, newCategory) {
     
     if (updatedCount > 0) {
         displayRecords();
-        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง
+        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
         calculateDailySummaries();
         showToast(`✓ อัพเดทประเภทใน ${updatedCount} รายการที่บันทึกไว้`, 'info');
     }
@@ -1836,7 +1836,7 @@ function deleteRecordsByType(typeToDelete) {
     
     if (deletedCount > 0) {
         displayRecords();
-        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง
+        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
         calculateDailySummaries();
         showToast(`🗑️ ลบ ${deletedCount} รายการที่ใช้ประเภท "${typeToDelete}" ออกแล้ว`, 'info');
     }
@@ -1947,7 +1947,7 @@ async function deleteRecord(index) {
 
     records.splice(index, 1);
     displayRecords();
-    // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง
+    // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
     calculateDailySummaries();
 
     await deleteRecordRealtime(record);
@@ -1995,7 +1995,7 @@ async function deleteRecordsByDate() {
         records = records.filter(record => !recordsToDelete.includes(record));
         
         displayRecords();
-        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง
+        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
         calculateDailySummaries();
         dateInput.value = ''; 
 
@@ -2132,7 +2132,7 @@ async function importEntriesFromAccount() {
         });
         
         displayRecords();
-        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง
+        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
         calculateDailySummaries();
         saveToLocal();
         
@@ -2548,12 +2548,28 @@ function handleSummaryOutput(choice) {
 // ==============================================
 
 /**
+ * แสดงข้อความเริ่มต้นในตารางสรุปรายวัน
+ */
+function resetDailySummaryTable() {
+    const tbody = document.getElementById("daily-summary-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="4" style="text-align:center; padding:20px; color:#999;">
+                กรุณาเลือกช่วงวันที่หรือจำนวนวัน แล้วกดปุ่ม "แสดงสรุป"
+            </td>
+        </tr>
+    `;
+}
+
+/**
  * คำนวณสรุปข้อมูลแต่ละวันและเก็บไว้ใน dailySummaryData
  */
 function calculateDailySummaries() {
     if (!currentAccount || records.length === 0) {
         dailySummaryData = {};
-        renderDailySummary({});
+        resetDailySummaryTable();   // ✅ ไม่ render อัตโนมัติ
         return;
     }
     
@@ -2561,7 +2577,7 @@ function calculateDailySummaries() {
     const accountRecords = records.filter(record => record.account === currentAccount);
     if (accountRecords.length === 0) {
         dailySummaryData = {};
-        renderDailySummary({});
+        resetDailySummaryTable();   // ✅ ไม่ render อัตโนมัติ
         return;
     }
     
@@ -2583,7 +2599,9 @@ function calculateDailySummaries() {
     });
     
     dailySummaryData = summaryByDate;
-    renderDailySummary(summaryByDate);
+    
+    // ✅ สำคัญ: ไม่ render ตารางตรงนี้อีกต่อไป
+    resetDailySummaryTable();
 }
 
 /**
@@ -2599,7 +2617,7 @@ function renderDailySummary(dataByDate) {
     const sortedDates = Object.keys(dataByDate).sort((a, b) => new Date(b) - new Date(a));
     
     if (sortedDates.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #999;">ไม่มีข้อมูลสรุป</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #999;">ไม่มีข้อมูลสรุปในช่วงวันที่เลือก</td></tr>';
         return;
     }
     
