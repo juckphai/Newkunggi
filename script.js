@@ -2743,6 +2743,9 @@ function showDailySummaryByRange() {
         return;
     }
 
+    // ✅ เพิ่มกล่องรับข้อความหมายเหตุ
+    const remarkInput = prompt("กรุณากรอกหมายเหตุ (ถ้าไม่กรอกจะใช้ 'No comment'):", "No comment") || "No comment";
+
     // เตรียม Context ส่งไปให้ Modal หน้าสรุป
     const activeDaysCount = Object.keys(filteredData).length;
     summaryContext = {
@@ -2752,7 +2755,7 @@ function showDailySummaryByRange() {
         filteredData: filteredData,
         activeDaysCount: activeDaysCount,
         title: 'สรุปผลแต่ละวัน',
-        remark: 'สรุปตามช่วงวันที่'
+        remark: remarkInput // ✅ นำข้อความมาแสดง
     };
     
     openSummaryOutputModal();
@@ -4574,6 +4577,7 @@ deleteRecordsByDate = async function() {
 // ฟังก์ชันสรุปเพิ่มเติม (ต้องมีเพื่อให้ปุ่มทำงาน)
 // ==============================================
 
+// [🔧 แก้ไข] ฟังก์ชัน summarizeToday
 function summarizeToday() {
     if (!currentAccount) {
         showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
@@ -4593,11 +4597,14 @@ function summarizeToday() {
         day: 'numeric' 
     });
     
+    // ✅ เพิ่มกล่องรับข้อความหมายเหตุ
+    const remarkInput = prompt("กรุณากรอกหมายเหตุ (ถ้าไม่กรอกจะใช้ 'No comment'):", "No comment") || "No comment";
+
     summaryContext = {
         summaryResult: summaryResult,
         title: 'สรุปข้อมูลวันนี้',
         dateString: thaiDateString,
-        remark: 'สรุปประจำวัน',
+        remark: remarkInput, // ✅ นำข้อความมาแสดง
         type: 'today',
         thaiDateString: thaiDateString,
         headerLine1: 'สรุปวันนี้ :',
@@ -4608,6 +4615,7 @@ function summarizeToday() {
     openSummaryOutputModal();
 }
 
+// [🔧 แก้ไข] ฟังก์ชัน summarizeAll
 function summarizeAll() {
     if (!currentAccount) {
         showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
@@ -4620,11 +4628,14 @@ function summarizeAll() {
     const summaryResult = generateSummaryData(startDate, endDate);
     if (!summaryResult) return;
     
+    // ✅ เพิ่มกล่องรับข้อความหมายเหตุ
+    const remarkInput = prompt("กรุณากรอกหมายเหตุ (ถ้าไม่กรอกจะใช้ 'No comment'):", "No comment") || "No comment";
+
     summaryContext = {
         summaryResult: summaryResult,
         title: 'สรุปข้อมูลทั้งหมด',
         dateString: 'ตั้งแต่อดีตถึงปัจจุบัน',
-        remark: 'สรุปทั้งหมด',
+        remark: remarkInput, // ✅ นำข้อความมาแสดง
         type: 'all',
         thaiDateString: 'ตั้งแต่อดีตถึงปัจจุบัน',
         headerLine1: 'สรุปทั้งหมด :',
@@ -4635,6 +4646,7 @@ function summarizeAll() {
     openSummaryOutputModal();
 }
 
+// [🔧 แก้ไข] ฟังก์ชัน summarizeByDayMonth
 function summarizeByDayMonth() {
     if (!currentAccount) {
         showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
@@ -4661,11 +4673,14 @@ function summarizeByDayMonth() {
         day: 'numeric' 
     });
     
+    // ✅ เพิ่มกล่องรับข้อความหมายเหตุ
+    const remarkInput = prompt("กรุณากรอกหมายเหตุ (ถ้าไม่กรอกจะใช้ 'No comment'):", "No comment") || "No comment";
+
     summaryContext = {
         summaryResult: summaryResult,
         title: 'สรุปข้อมูลวันที่เลือก',
         dateString: selectedDateStr,
-        remark: 'สรุปตามวันที่เลือก',
+        remark: remarkInput, // ✅ นำข้อความมาแสดง
         type: 'byDayMonth',
         thaiDateString: thaiDateString,
         headerLine1: 'สรุปวันที่เลือก :',
@@ -4676,6 +4691,7 @@ function summarizeByDayMonth() {
     openSummaryOutputModal();
 }
 
+// [🔧 แก้ไข] ฟังก์ชัน summarize
 function summarize() {
     if (!currentAccount) {
         showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
@@ -4708,11 +4724,14 @@ function summarize() {
     const endThai = endDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     const thaiDateString = `${startThai} ถึง ${endThai}`;
     
+    // ✅ เพิ่มกล่องรับข้อความหมายเหตุ
+    const remarkInput = prompt("กรุณากรอกหมายเหตุ (ถ้าไม่กรอกจะใช้ 'No comment'):", "No comment") || "No comment";
+
     summaryContext = {
         summaryResult: summaryResult,
         title: 'สรุปข้อมูลตามช่วงวันที่',
         dateString: `${startDateStr} ถึง ${endDateStr}`,
-        remark: 'สรุปตามช่วงวันที่',
+        remark: remarkInput, // ✅ นำข้อความมาแสดง
         type: 'range',
         thaiDateString: thaiDateString,
         headerLine1: 'สรุปช่วงวันที่ :',
