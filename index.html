@@ -328,7 +328,7 @@
                   </div>
                 </div>
 
-                <!-- ✅ ส่วนใหม่: สรุปผลแต่ละวัน (เฉพาะผลสรุปเป็นตาราง) พร้อมโหมดเลือกช่วงวันที่ -->
+                <!-- ✅ ส่วนใหม่: สรุปผลแต่ละวัน (ปรับปรุงตามคำแนะนำ) -->
                 <div id="daily-summary-section" class="summary-subsection card export-area" style="text-align: center; margin-top: 20px; border-top: 2px solid #4a90e2; padding-top: 15px;">
                   <label class="summary-subsection-header" style="color: #4a90e2; font-size: 18px;">📊 สรุปผลแต่ละวัน</label>
                   
@@ -373,26 +373,6 @@
                       <button onclick="showDailySummaryByRange()" style="background-color: #4a90e2;">📊 แสดงสรุปตามช่วงที่เลือก</button>
                     </div>
                   </div>
-                  
-                  <table class="summary-table">
-                    <thead>
-                      <tr>
-                        <th>วันที่</th>
-                        <th>รายได้</th>
-                        <th>รายจ่าย</th>
-                        <th>คงเหลือ</th>
-                      </tr>
-                    </thead>
-                    <tbody id="daily-summary-body">
-                      <!-- จะถูกเติมด้วย JavaScript -->
-                    </tbody>
-                  </table>
-
-                  <div class="share-btn-wrapper" style="margin-top: 15px;">
-                    <button onclick="shareDailySummary()" style="background-color: #4a90e2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                      💾 บันทึกเป็นรูปภาพ
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -426,42 +406,10 @@
         background-color: #FAFAD2; 
     }
     
-    /* ✅ สไตล์เพิ่มเติมสำหรับส่วนสรุปแต่ละวันเป็นตาราง */
-    .summary-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-    }
-    
-    .summary-table th,
-    .summary-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-    }
-    
-    .summary-table th {
-        background-color: #f5f5f5;
-        font-weight: bold;
-    }
-    
     .export-area {
         background: #ffffff;
         padding: 15px;
         border-radius: 10px;
-    }
-    
-    .share-btn-wrapper button {
-        transition: transform 0.2s;
-    }
-    
-    .share-btn-wrapper button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    #daily-summary-body td {
-        font-weight: 500;
     }
 </style>
 

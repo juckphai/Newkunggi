@@ -2510,16 +2510,49 @@ function buildPdfSummaryHtml(context) {
     `;
 }
 
-/**
- * จัดการผลลัพธ์สรุป
- */
+// ==============================================
+// ฟังก์ชันจัดการผลลัพธ์สรุป
+// ==============================================
+
+// [🔧 แก้ไข] ฟังก์ชัน handleSummaryOutput ใหม่ รองรับ 'dailySummary'
 function handleSummaryOutput(choice) {
-    if (!summaryContext || !summaryContext.summaryResult) {
+    if (!summaryContext) {
         console.error("Summary context is missing. Cannot proceed.");
         closeSummaryOutputModal();
         return;
     }
     
+    // --- โหมดพิเศษ: สรุปผลแต่ละวัน ---
+    if (summaryContext.type === 'dailySummary') {
+        if (choice === 'display') {
+            const htmlForDisplay = buildDailySummaryHtml(summaryContext, false);
+            openSummaryModal(htmlForDisplay);
+        } else if (choice === 'xlsx') {
+            exportDailySummaryToXlsx(summaryContext);
+            showToast(`📊 สรุปข้อมูลบันทึกเป็นไฟล์ XLSX สำเร็จ`, 'success');
+        } else if (choice === 'pdf') {
+            const printContainer = document.getElementById('print-container');
+            if (printContainer) {
+                const htmlWithDetailsForPdf = buildDailySummaryHtml(summaryContext, true);
+                printContainer.innerHTML = `<div class="summaryResult">${htmlWithDetailsForPdf}</div>`;
+                
+                const toast = document.getElementById('toast');
+                if (toast) toast.style.display = 'none';
+                
+                setTimeout(() => { 
+                    window.print(); 
+                    setTimeout(() => {
+                        if (toast) toast.style.display = '';
+                        showToast(`📄 สรุปข้อมูลบันทึกเป็นไฟล์ PDF สำเร็จ`, 'success');
+                    }, 1000);
+                }, 250);
+            }
+        }
+        closeSummaryOutputModal();
+        return;
+    }
+
+    // --- โหมดปกติ (สรุปวันที่ถึงวันที่, สรุปวันนี้, ฯลฯ) ---
     if (choice === 'display') {
         const htmlForDisplay = buildOriginalSummaryHtml(summaryContext);
         openSummaryModal(htmlForDisplay);
@@ -2534,17 +2567,12 @@ function handleSummaryOutput(choice) {
             printContainer.innerHTML = `<div class="summaryResult">${htmlWithDetailsForPdf}</div>`;
             
             const toast = document.getElementById('toast');
-            if (toast) {
-                toast.style.display = 'none';
-            }
+            if (toast) toast.style.display = 'none';
             
             setTimeout(() => { 
                 window.print(); 
-                
                 setTimeout(() => {
-                    if (toast) {
-                        toast.style.display = '';
-                    }
+                    if (toast) toast.style.display = '';
                     showToast(`📄 สรุปข้อมูลบันทึกเป็นไฟล์ PDF สำเร็จ`, 'success');
                 }, 1000);
             }, 250);
@@ -2560,24 +2588,8 @@ function handleSummaryOutput(choice) {
 /**
  * แสดงข้อความเริ่มต้นในตารางสรุปรายวัน และเคลียร์ข้อความสรุปด้านบน
  */
-function resetDailySummaryTable() {
-    const tbody = document.getElementById("daily-summary-body");
-    if (!tbody) return;
-
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="4" style="text-align:center; padding:20px; color:#999;">
-                กรุณาเลือกช่วงวันที่หรือจำนวนวัน แล้วกดปุ่ม "แสดงสรุป"
-            </td>
-        </tr>
-    `;
-    
-    // เคลียร์ส่วนรายละเอียดข้อความด้านบน (ถ้ามี)
-    const headerContainer = document.getElementById("daily-summary-header");
-    if (headerContainer) {
-        headerContainer.innerHTML = '';
-    }
-}
+// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
+// function resetDailySummaryTable() { ... }
 
 /**
  * คำนวณสรุปข้อมูลแต่ละวันและเก็บไว้ใน dailySummaryData
@@ -2586,14 +2598,12 @@ function calculateDailySummaries() {
     console.log("-> กำลังคำนวณข้อมูลสรุปรายวัน...");
     if (!currentAccount || records.length === 0) {
         dailySummaryData = {};
-        resetDailySummaryTable();
         return;
     }
 
     const accountRecords = records.filter(record => record.account === currentAccount);
     if (accountRecords.length === 0) {
         dailySummaryData = {};
-        resetDailySummaryTable();
         return;
     }
 
@@ -2628,134 +2638,19 @@ function calculateDailySummaries() {
 
     dailySummaryData = summaryByDate;
     console.log("คำนวณเสร็จสิ้น พบข้อมูลที่มีความเคลื่อนไหวจำนวน:", Object.keys(dailySummaryData).length, "วัน");
-    resetDailySummaryTable();
 }
 
 /**
  * แสดงสรุปแต่ละวันเป็นตาราง (ฟังก์ชันหลัก)
  */
-function renderDailySummaryTable() {
-    const tbody = document.getElementById("daily-summary-body");
-    if (!tbody) {
-        console.error("❌ หา ID: daily-summary-body ไม่เจอในหน้า HTML");
-        return;
-    }
-
-    if (!dailySummaryData || Object.keys(dailySummaryData).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">ไม่มีข้อมูลสรุปในช่วงวันที่เลือก</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = "";
-    const sortedDates = Object.keys(dailySummaryData).sort((a, b) => new Date(b) - new Date(a));
-
-    sortedDates.forEach(date => {
-        const sum = dailySummaryData[date];
-        const diff = sum.income - sum.expense;
-        const thaiDate = formatThaiDate(date);
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${thaiDate}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #28a745; font-weight: bold;">${sum.income.toLocaleString()}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #dc3545; font-weight: bold;">${sum.expense.toLocaleString()}</td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: ${diff >= 0 ? '#28a745' : '#dc3545'}; font-weight: bold;">
-                ${diff.toLocaleString()}
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
+// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
+// function renderDailySummaryTable() { ... }
 
 /**
  * แสดงข้อความสรุปรายวัน (นอกตาราง)
  */
-function renderDailySummaryHeader(startDateStr, endDateStr, activeDaysCount) {
-    const startObj = new Date(startDateStr); 
-    startObj.setHours(0, 0, 0, 0);
-    const endObj = new Date(endDateStr); 
-    endObj.setHours(23, 59, 59, 999);
-
-    // ใช้ generateSummaryData เพื่อดึงสถิติยอดรวมและการแยกประเภท
-    const summaryResult = generateSummaryData(startObj, endObj);
-    if (!summaryResult) return;
-    const summary = summaryResult.summary;
-
-    const now = new Date();
-    const summaryDateTime = now.toLocaleDateString('th-TH', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-    }) + ' น.';
-
-    const startThai = formatThaiDate(startDateStr);
-    const endThai = formatThaiDate(endDateStr);
-
-    // คำนวณจำนวนวันทั้งหมดและวันที่ไม่มีการทำธุรกรรม
-    const calculatedTotalDays = Math.round((endObj - startObj) / (1000 * 60 * 60 * 24)) + 1;
-    const inactiveDaysCount = calculatedTotalDays - activeDaysCount;
-
-    // สร้างข้อความแยกตามประเภท รายรับ
-    let incomeHTML = '';
-    for (const typeKey in summary.income) {
-        incomeHTML += `<p style="margin: 2px 0 2px 15px; color: #555;">- ${typeKey} : ${summary.income[typeKey].count} ครั้ง เป็นเงิน ${summary.income[typeKey].amount.toLocaleString()} บาท</p>`;
-    }
-
-    // สร้างข้อความแยกตามประเภท รายจ่าย
-    let expenseHTML = '';
-    for (const typeKey in summary.expense) {
-        expenseHTML += `<p style="margin: 2px 0 2px 15px; color: #555;">- ${typeKey} : ${summary.expense[typeKey].count} ครั้ง เป็นเงิน ${summary.expense[typeKey].amount.toLocaleString()} บาท</p>`;
-    }
-
-    // คำนวณสรุปกำไรขาดทุนสุทธิ
-    let comparisonText = '';
-    let differenceAmount = 0;
-    if (summary.totalIncome > summary.totalExpense) {
-        differenceAmount = summary.totalIncome - summary.totalExpense;
-        comparisonText = `<span style="color: blue;">รายได้มากกว่ารายจ่าย = ${differenceAmount.toLocaleString()} บาท</span>`;
-    } else if (summary.totalIncome < summary.totalExpense) {
-        differenceAmount = summary.totalExpense - summary.totalIncome;
-        comparisonText = `<span style="color: red;">รายจ่ายมากกว่ารายได้ = ${differenceAmount.toLocaleString()} บาท</span>`;
-    } else {
-        comparisonText = 'รายได้เท่ากับรายจ่าย';
-    }
-
-    // จัดรูปแบบ HTML
-    const htmlContent = `
-        <div style="background-color: #fcfcfc; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: left; font-size: 14px;">
-            <p style="margin: 0 0 5px 0;"><strong>ชื่อบัญชี:</strong> ${currentAccount}</p>
-            <p style="margin: 0 0 5px 0;"><strong>สรุปเมื่อวันที่ :</strong> ${summaryDateTime}</p>
-            <p style="margin: 0 0 5px 0;"><strong>สรุปวันที่ :</strong> ${startDateStr === endDateStr ? startThai : `${startThai} ถึง ${endThai}`}</p>
-            <p style="margin: 0 0 5px 0;">จำนวน ${calculatedTotalDays} วัน</p>
-            <p style="margin: 0 0 10px 0;">ทำธุรกรรม ${activeDaysCount} วัน, ไม่ได้ทำ ${inactiveDaysCount} วัน</p>
-            
-            <p style="margin: 5px 0 2px 0;"><strong>รายรับ :</strong> <span style="color: #28a745;">${summary.incomeCount} ครั้ง เป็นเงิน ${summary.totalIncome.toLocaleString()} บาท</span></p>
-            ${incomeHTML}
-            
-            <p style="margin: 10px 0 2px 0;"><strong>รายจ่าย :</strong> <span style="color: #dc3545;">${summary.expenseCount} ครั้ง เป็นเงิน ${summary.totalExpense.toLocaleString()} บาท</span></p>
-            ${expenseHTML}
-            
-            <hr style="border: 0.5px solid #ccc; margin: 10px 0;">
-            <p style="margin: 5px 0 0 0; font-size: 15px;"><strong>สรุป :</strong> ${comparisonText}</p>
-        </div>
-    `;
-
-    // แทรก HTML ด้านบนตาราง
-    let headerContainer = document.getElementById("daily-summary-header");
-    if (!headerContainer) {
-        const tbody = document.getElementById("daily-summary-body");
-        if (tbody) {
-            const table = tbody.closest('table');
-            headerContainer = document.createElement('div');
-            headerContainer.id = "daily-summary-header";
-            // วาง div ใหม่ไว้ก่อนหน้า table
-            table.parentNode.insertBefore(headerContainer, table);
-        }
-    }
-    
-    if (headerContainer) {
-        headerContainer.innerHTML = htmlContent;
-    }
-}
+// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
+// function renderDailySummaryHeader(...) { ... }
 
 /**
  * สลับโหมดการเลือกช่วงวันที่ (range หรือ lastX)
@@ -2811,14 +2706,9 @@ function calculateLastXRange() {
     showToast('✅ คำนวณช่วงวันที่เรียบร้อย', 'success');
 }
 
-/**
- * แสดงสรุปตามช่วงวันที่ที่เลือก (อัปเดตใหม่รวมให้เหลือฟังก์ชันเดียว)
- */
+// [🔧 แก้ไข] ฟังก์ชัน showDailySummaryByRange ใหม่ (ใช้ Modal)
 function showDailySummaryByRange() {
-    console.log("-> กดปุ่มแสดงสรุปตามช่วงที่เลือก");
-    // ตรวจสอบโหมดถ้ามีการเลือก (รองรับทั้งแบบมีและไม่มีปุ่มวิทยุ)
-    const modeInput = document.querySelector('input[name="dailyMode"]:checked');
-    const mode = modeInput ? modeInput.value : 'range';
+    console.log("-> กดปุ่มแสดงสรุปตามช่วงที่เลือก (โหมด Modal)");
     
     let startDate = document.getElementById('dailyStartDate').value;
     let endDate = document.getElementById('dailyEndDate').value;
@@ -2850,66 +2740,29 @@ function showDailySummaryByRange() {
     
     if (!hasData) {
         showToast('⚠️ ไม่มีข้อมูลในช่วงวันที่เลือก', 'error');
-        resetDailySummaryTable();
-        const tbody = document.getElementById("daily-summary-body");
-        if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">ไม่มีข้อมูลความเคลื่อนไหวในช่วงวันที่เลือก</td></tr>';
-        }
         return;
     }
 
-    // 1. เรียกใช้งานฟังก์ชันเพื่อแสดงข้อความสรุปด้านบน
+    // เตรียม Context ส่งไปให้ Modal หน้าสรุป
     const activeDaysCount = Object.keys(filteredData).length;
-    renderDailySummaryHeader(startDate, endDate, activeDaysCount);
+    summaryContext = {
+        type: 'dailySummary', // แจ้งประเภทเพื่อแยกการสร้าง HTML
+        startDateStr: startDate,
+        endDateStr: endDate,
+        filteredData: filteredData,
+        activeDaysCount: activeDaysCount,
+        title: 'สรุปผลแต่ละวัน',
+        remark: 'สรุปตามช่วงวันที่'
+    };
     
-    // 2. แสดงเฉพาะตาราง
-    const tempData = dailySummaryData;
-    dailySummaryData = filteredData;
-    renderDailySummaryTable();
-    dailySummaryData = tempData;
-    
-    showToast('✅ แสดงสรุปผลเรียบร้อย', 'success');
+    openSummaryOutputModal();
 }
 
 /**
  * บันทึกสรุปแต่ละวันเป็นรูปภาพ
  */
-function shareDailySummary() {
-    const element = document.getElementById("daily-summary-section");
-    if (!element) {
-        showToast("❌ ไม่พบส่วนสรุปผลแต่ละวัน", 'error');
-        return;
-    }
-    
-    // ซ่อนปุ่มบันทึกชั่วคราว
-    const shareBtn = element.querySelector('.share-btn-wrapper button');
-    if (shareBtn) shareBtn.style.display = 'none';
-    
-    showToast("⏳ กำลังสร้างรูปภาพ...", 'info');
-    
-    html2canvas(element, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: false,
-        useCORS: true
-    }).then(canvas => {
-        // แสดงปุ่มกลับมา
-        if (shareBtn) shareBtn.style.display = '';
-        
-        // สร้างลิงก์ดาวน์โหลด
-        const link = document.createElement('a');
-        link.download = `สรุปรายวัน_${currentAccount || 'account'}_${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        
-        showToast(`✅ บันทึกสรุปเป็นรูปภาพเรียบร้อย`, 'success');
-    }).catch(error => {
-        console.error('Error capturing daily summary:', error);
-        if (shareBtn) shareBtn.style.display = '';
-        showToast('❌ ไม่สามารถบันทึกเป็นรูปภาพได้', 'error');
-    });
-}
+// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
+// function shareDailySummary() { ... }
 
 // ==============================================
 // ฟังก์ชันจัดการการส่งออกข้อมูล
@@ -4283,6 +4136,191 @@ function applyExcelStyles(ws, data) {
     ws['!cols'][4] = {wch: 20};
     
     return ws;
+}
+
+// ==============================================
+// [✅ เพิ่ม] ฟังก์ชันสร้าง HTML สำหรับ Modal ของ สรุปรายวัน
+// ==============================================
+function buildDailySummaryHtml(context, isPdf = false) {
+    const { startDateStr, endDateStr, activeDaysCount, filteredData, title, remark } = context;
+
+    const startObj = new Date(startDateStr); startObj.setHours(0, 0, 0, 0);
+    const endObj = new Date(endDateStr); endObj.setHours(23, 59, 59, 999);
+    
+    // อาศัย generateSummaryData ในการดึงยอดรวม
+    const summaryResult = generateSummaryData(startObj, endObj);
+    if (!summaryResult) return "";
+    const summary = summaryResult.summary;
+
+    const summaryDateTime = new Date().toLocaleString("th-TH", {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) + ' น.';
+
+    const startThai = formatThaiDate(startDateStr);
+    const endThai = formatThaiDate(endDateStr);
+    const calculatedTotalDays = Math.round((new Date(endDateStr).setHours(0, 0, 0, 0) - new Date(startDateStr).setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)) + 1;
+    const inactiveDaysCount = calculatedTotalDays - activeDaysCount;
+
+    const pStyle = isPdf ? 'style="line-height: 0.5;"' : '';
+    const listStyle = isPdf ? 'style="margin-left: 15px; line-height: 0.5;"' : '';
+
+    // สร้างรายละเอียดรายรับรายจ่าย
+    let incomeHTML = '';
+    for (const typeKey in summary.income) {
+        incomeHTML += `<p ${listStyle}>- ${typeKey} : ${summary.income[typeKey].count} ครั้ง เป็นเงิน ${summary.income[typeKey].amount.toLocaleString()} บาท</p>`;
+    }
+
+    let expenseHTML = '';
+    for (const typeKey in summary.expense) {
+        expenseHTML += `<p ${listStyle}>- ${typeKey} : ${summary.expense[typeKey].count} ครั้ง เป็นเงิน ${summary.expense[typeKey].amount.toLocaleString()} บาท</p>`;
+    }
+
+    // หักลบยอด
+    let comparisonText = '';
+    let differenceAmount = 0;
+    if (summary.totalIncome > summary.totalExpense) {
+        differenceAmount = summary.totalIncome - summary.totalExpense;
+        comparisonText = `<span style="color: blue;">รายได้มากกว่ารายจ่าย = ${differenceAmount.toLocaleString()} บาท</span>`;
+    } else if (summary.totalIncome < summary.totalExpense) {
+        differenceAmount = summary.totalExpense - summary.totalIncome;
+        comparisonText = `<span style="color: red;">รายจ่ายมากกว่ารายได้ = ${differenceAmount.toLocaleString()} บาท</span>`;
+    } else {
+        comparisonText = 'รายได้เท่ากับรายจ่าย';
+    }
+
+    // สร้างตารางแต่ละวัน
+    const sortedDates = Object.keys(filteredData).sort((a, b) => new Date(b) - new Date(a));
+    let tableHTML = `
+    <div style="margin-top: 20px;">
+        <h4 style="border-bottom: 1px solid #ddd; padding-bottom: 5px;" ${pStyle}>ตารางสรุปผลแต่ละวัน</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="padding: 8px; border: 1px solid #ddd;">วันที่</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">รายได้</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">รายจ่าย</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">คงเหลือ</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    sortedDates.forEach(date => {
+        const sum = filteredData[date];
+        const diff = sum.income - sum.expense;
+        tableHTML += `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${formatThaiDate(date)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; color: #28a745; font-weight: bold;">${sum.income.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; color: #dc3545; font-weight: bold;">${sum.expense.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; color: ${diff >= 0 ? '#28a745' : '#dc3545'}; font-weight: bold;">${diff.toLocaleString()}</td>
+            </tr>
+        `;
+    });
+    tableHTML += `</tbody></table></div>`;
+
+    return `
+        <p ${pStyle}><strong>ชื่อบัญชี:</strong> ${currentAccount}</p>
+        <p ${pStyle}><strong>สรุปเมื่อวันที่ : </strong> ${summaryDateTime}</p>
+        <p ${pStyle}><strong>${title} : </strong> ${startDateStr === endDateStr ? startThai : `${startThai} ถึง ${endThai}`}</p>
+        <p ${pStyle}>จำนวนทั้งหมด ${calculatedTotalDays} วัน (ทำธุรกรรม ${activeDaysCount} วัน, ไม่ได้ทำ ${inactiveDaysCount} วัน)</p>
+        <hr style="border: 0.5px solid green;">
+        <p ${pStyle}><strong>รายรับ : </strong> ${summary.incomeCount} ครั้ง เป็นเงิน ${summary.totalIncome.toLocaleString()} บาท</p>
+        ${incomeHTML}
+        <hr style="border: 0.5px solid green;">
+        <p ${pStyle}><strong>รายจ่าย : </strong> ${summary.expenseCount} ครั้ง เป็นเงิน ${summary.totalExpense.toLocaleString()} บาท</p>
+        ${expenseHTML}
+        <hr style="border: 0.5px solid green;">
+        <p ${pStyle}><strong>สรุป : </strong> ${comparisonText}</p>
+        
+        <p ${pStyle}>ข้อความเพิ่ม : <span style="color: orange;">${remark}</span></p>
+        ${tableHTML}
+    `;
+}
+
+// ==============================================
+// [✅ เพิ่ม] ฟังก์ชันบันทึก XLSX สำหรับ สรุปรายวัน
+// ==============================================
+function exportDailySummaryToXlsx(context) {
+    const { startDateStr, endDateStr, activeDaysCount, filteredData, title, remark } = context;
+
+    const startObj = new Date(startDateStr); startObj.setHours(0, 0, 0, 0);
+    const endObj = new Date(endDateStr); endObj.setHours(23, 59, 59, 999);
+    const summaryResult = generateSummaryData(startObj, endObj);
+    if (!summaryResult) return;
+    const summary = summaryResult.summary;
+
+    const wb = XLSX.utils.book_new();
+    let excelData = [];
+
+    const summaryDateTime = new Date().toLocaleString("th-TH", {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) + ' น.';
+
+    const startThai = formatThaiDate(startDateStr);
+    const endThai = formatThaiDate(endDateStr);
+    const calculatedTotalDays = Math.round((new Date(endDateStr).setHours(0, 0, 0, 0) - new Date(startDateStr).setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)) + 1;
+    const inactiveDaysCount = calculatedTotalDays - activeDaysCount;
+
+    excelData.push(['สรุปผลแต่ละวัน']);
+    excelData.push(['ชื่อบัญชี:', currentAccount]);
+    excelData.push(['สรุปเมื่อวันที่:', summaryDateTime]);
+    excelData.push([`${title} :`, startDateStr === endDateStr ? startThai : `${startThai} ถึง ${endThai}`]);
+    excelData.push(['จำนวนทั้งหมด:', `${calculatedTotalDays} วัน (ทำธุรกรรม ${activeDaysCount} วัน, ไม่ได้ทำ ${inactiveDaysCount} วัน)`]);
+    excelData.push([]);
+
+    excelData.push(['รายรับ :', `${summary.incomeCount} ครั้ง เป็นเงิน ${summary.totalIncome.toLocaleString()} บาท`]);
+    for (const typeKey in summary.income) {
+        excelData.push([`- ${typeKey} : ${summary.income[typeKey].count} ครั้ง เป็นเงิน ${summary.income[typeKey].amount.toLocaleString()} บาท`]);
+    }
+    excelData.push([]);
+
+    excelData.push(['รายจ่าย :', `${summary.expenseCount} ครั้ง เป็นเงิน ${summary.totalExpense.toLocaleString()} บาท`]);
+    for (const typeKey in summary.expense) {
+        excelData.push([`- ${typeKey} : ${summary.expense[typeKey].count} ครั้ง เป็นเงิน ${summary.expense[typeKey].amount.toLocaleString()} บาท`]);
+    }
+    excelData.push([]);
+
+    let comparisonText = '';
+    let netAmount = summary.totalIncome - summary.totalExpense;
+    if (summary.totalIncome > summary.totalExpense) {
+        comparisonText = `รายได้มากกว่ารายจ่าย = ${netAmount.toLocaleString()} บาท`;
+    } else if (summary.totalIncome < summary.totalExpense) {
+        comparisonText = `รายจ่ายมากกว่ารายได้ = ${Math.abs(netAmount).toLocaleString()} บาท`;
+    } else {
+        comparisonText = 'รายได้เท่ากับรายจ่าย';
+    }
+    excelData.push(['สรุป :', comparisonText]);
+    excelData.push(['ข้อความเพิ่ม :', remark]);
+    excelData.push([]);
+
+    excelData.push(['--- ตารางสรุปผลแต่ละวัน ---']);
+    excelData.push(['วันที่', 'รายได้ (บาท)', 'รายจ่าย (บาท)', 'คงเหลือ (บาท)']);
+
+    const sortedDates = Object.keys(filteredData).sort((a, b) => new Date(b) - new Date(a));
+    sortedDates.forEach(date => {
+        const sum = filteredData[date];
+        const diff = sum.income - sum.expense;
+        excelData.push([
+            formatThaiDate(date),
+            sum.income,
+            sum.expense,
+            diff
+        ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+    const colWidths = [ {wch: 25}, {wch: 25}, {wch: 25}, {wch: 25} ];
+    ws['!cols'] = colWidths;
+
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({s: {r: 0, c: 0}, e: {r: 0, c: 3}});
+
+    XLSX.utils.book_append_sheet(wb, ws, "สรุปผลแต่ละวัน");
+
+    const fileName = `สรุปรายวัน_${currentAccount}_${startDateStr}_ถึง_${endDateStr}.xlsx`;
+    XLSX.writeFile(wb, fileName);
 }
 
 // ==============================================
