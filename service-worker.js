@@ -1,7 +1,7 @@
 // service-worker.js
 // ปรับปรุงให้รองรับ Firebase + Offline เต็มรูปแบบ และแก้ปัญหาการเชื่อมต่อ Database
-const staticCacheName = 'account-app-static-v129'; // อัพเดทเวอร์ชัน Cache เป็น v129
-const dynamicCacheName = 'account-app-dynamic-v129';
+const staticCacheName = 'account-app-static-v899'; // อัพเดทเวอร์ชัน Cache เป็น v129
+const dynamicCacheName = 'account-app-dynamic-v899';
 
 // ไฟล์ที่ต้อง cache ตั้งแต่ตอน install
 const assets = [
