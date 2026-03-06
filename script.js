@@ -4474,6 +4474,24 @@ async function handleChangePassword() {
 }
 
 // ==============================================
+// [🔧 เพิ่มใหม่] ฟังก์ชันสลับโหมดสำหรับการสรุปแบบกำหนดเอง
+// ==============================================
+// ฟังก์ชันสลับโหมดสำหรับการสรุปแบบกำหนดเอง
+function toggleGeneralSummaryMode() {
+    const mode = document.querySelector('input[name="summaryMode"]:checked').value;
+    const rangeContainer = document.getElementById('generalRangeContainer');
+    const lastXContainer = document.getElementById('generalLastXContainer');
+    
+    if (mode === 'lastX') {
+        if(rangeContainer) rangeContainer.style.display = 'none';
+        if(lastXContainer) lastXContainer.style.display = 'block';
+    } else {
+        if(rangeContainer) rangeContainer.style.display = 'block';
+        if(lastXContainer) lastXContainer.style.display = 'none';
+    }
+}
+
+// ==============================================
 // ฟังก์ชันเริ่มต้น (onload)
 // ==============================================
 
@@ -4510,6 +4528,11 @@ window.onload = function () {
     // ตั้งค่าเริ่มต้นสำหรับโหมดสรุปแต่ละวัน
     if (typeof toggleDailyMode === 'function') {
         toggleDailyMode();
+    }
+    
+    // ตั้งค่าเริ่มต้นสำหรับโหมดสรุปทั่วไป
+    if (typeof toggleGeneralSummaryMode === 'function') {
+        toggleGeneralSummaryMode();
     }
     
     setTimeout(() => {
@@ -4691,17 +4714,65 @@ function summarizeByDayMonth() {
     openSummaryOutputModal();
 }
 
-// [🔧 แก้ไข] ฟังก์ชัน summarize
+// [🔧 แก้ไข] ฟังก์ชัน summarize (รองรับโหมดย้อนหลัง X วัน)
 function summarize() {
     if (!currentAccount) {
         showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
         return;
     }
     
-    const startDateStr = document.getElementById('startDate').value;
-    const endDateStr = document.getElementById('endDate').value;
-    const showDetails = document.getElementById('showDetailsRange').checked;
-    
+    // --- 🟢 ส่วนที่ 1: ดึงค่าวันที่โดยเช็คจากโหมดที่เลือก ---
+    let startDateStr = '';
+    let endDateStr = '';
+    const showDetailsElement = document.getElementById('showDetailsRange');
+    const showDetails = showDetailsElement ? showDetailsElement.checked : false;
+
+    // เช็คว่ามี Radio Button ให้เลือกโหมดหรือไม่ (กันเหนียวเผื่อ HTML โหลดไม่ทัน)
+    const modeRadios = document.querySelectorAll('input[name="summaryMode"]');
+    let selectedMode = 'range';
+    if (modeRadios.length > 0) {
+        const checkedRadio = document.querySelector('input[name="summaryMode"]:checked');
+        if (checkedRadio) selectedMode = checkedRadio.value;
+    }
+
+    if (selectedMode === 'lastX') {
+        // โหมด X วันล่าสุด
+        const daysInput = document.getElementById('summaryLastXDays');
+        const days = parseInt(daysInput ? daysInput.value : 0);
+        
+        if (!days || days <= 0) {
+            showToast('⚠️ กรุณาระบุจำนวนวันที่ต้องการย้อนหลังให้ถูกต้อง', 'error');
+            return;
+        }
+
+        // คำนวณวันที่ย้อนหลัง (นับจากวันนี้)
+        const today = new Date();
+        const start = new Date(today);
+        start.setDate(today.getDate() - days + 1); // ลบจำนวนวัน (+1 เพื่อให้นับวันนี้เป็น 1 วัน)
+
+        // แปลงเป็น YYYY-MM-DD แบบปลอดภัย (ป้องกัน Timezone คลาดเคลื่อน)
+        const ey = today.getFullYear();
+        const em = String(today.getMonth() + 1).padStart(2, '0');
+        const ed = String(today.getDate()).padStart(2, '0');
+        
+        const sy = start.getFullYear();
+        const sm = String(start.getMonth() + 1).padStart(2, '0');
+        const sd = String(start.getDate()).padStart(2, '0');
+
+        endDateStr = `${ey}-${em}-${ed}`;
+        startDateStr = `${sy}-${sm}-${sd}`;
+
+        // (Option) อัปเดตค่ากลับไปที่ช่อง input date เพื่อให้ผู้ใช้เห็นว่าระบบใช้วันที่ไหนคำนวณ
+        if (document.getElementById('startDate')) document.getElementById('startDate').value = startDateStr;
+        if (document.getElementById('endDate')) document.getElementById('endDate').value = endDateStr;
+
+    } else {
+        // โหมดปกติ (ดึงจากช่อง Input Date ตรงๆ)
+        startDateStr = document.getElementById('startDate').value;
+        endDateStr = document.getElementById('endDate').value;
+    }
+    // --- 🟢 สิ้นสุดส่วนที่ 1 ---
+
     if (!startDateStr || !endDateStr) {
         showToast("❌ กรุณาเลือกวันที่เริ่มต้นและวันที่สิ้นสุด", 'error');
         return;
@@ -4720,7 +4791,7 @@ function summarize() {
     const summaryResult = generateSummaryData(startDate, endDate);
     if (!summaryResult) return;
     
-const startThai = startDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const startThai = startDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     const endThai = endDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     const thaiDateString = `${startThai} ถึง ${endThai}`;
     
