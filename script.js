@@ -2586,12 +2586,6 @@ function handleSummaryOutput(choice) {
 // ==============================================
 
 /**
- * แสดงข้อความเริ่มต้นในตารางสรุปรายวัน และเคลียร์ข้อความสรุปด้านบน
- */
-// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
-// function resetDailySummaryTable() { ... }
-
-/**
  * คำนวณสรุปข้อมูลแต่ละวันและเก็บไว้ใน dailySummaryData
  */
 function calculateDailySummaries() {
@@ -2639,18 +2633,6 @@ function calculateDailySummaries() {
     dailySummaryData = summaryByDate;
     console.log("คำนวณเสร็จสิ้น พบข้อมูลที่มีความเคลื่อนไหวจำนวน:", Object.keys(dailySummaryData).length, "วัน");
 }
-
-/**
- * แสดงสรุปแต่ละวันเป็นตาราง (ฟังก์ชันหลัก)
- */
-// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
-// function renderDailySummaryTable() { ... }
-
-/**
- * แสดงข้อความสรุปรายวัน (นอกตาราง)
- */
-// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
-// function renderDailySummaryHeader(...) { ... }
 
 /**
  * สลับโหมดการเลือกช่วงวันที่ (range หรือ lastX)
@@ -2760,12 +2742,6 @@ function showDailySummaryByRange() {
     
     openSummaryOutputModal();
 }
-
-/**
- * บันทึกสรุปแต่ละวันเป็นรูปภาพ
- */
-// [⚠️ ลบ] ฟังก์ชันนี้ถูกลบตามหมายเหตุ (ไม่ได้ใช้แล้ว)
-// function shareDailySummary() { ... }
 
 // ==============================================
 // ฟังก์ชันจัดการการส่งออกข้อมูล
@@ -4524,20 +4500,25 @@ function calculateGeneralLastXRange() {
     const dates = Object.keys(dailySummaryData).sort();
     const endDateStr = dates[dates.length - 1]; // วันที่มากที่สุด (ล่าสุด)
     
-    const endObj = new Date(endDateStr);
-    const startObj = new Date(endObj);
+    // ✅ แยกปี เดือน วัน เพื่อสร้าง Date Object ให้ตรงกับ Timezone ท้องถิ่นแบบ 100%
+    const [ey, em, ed] = endDateStr.split('-').map(Number);
+    const endObj = new Date(ey, em - 1, ed);
+    const startObj = new Date(ey, em - 1, ed);
     startObj.setDate(endObj.getDate() - days + 1);
     
-    // แปลงรูปแบบเป็น YYYY-MM-DD เพื่อยัดลง input type="date"
-    const startStr = startObj.toISOString().split('T')[0];
+    // แปลงกลับเป็น YYYY-MM-DD
+    const sy = startObj.getFullYear();
+    const sm = String(startObj.getMonth() + 1).padStart(2, '0');
+    const sd = String(startObj.getDate()).padStart(2, '0');
+    const startStr = `${sy}-${sm}-${sd}`;
     
     // เซ็ตค่าลงในช่อง Input แบบเงียบๆ เพื่อให้ฟังก์ชัน summarize() ดึงไปใช้ต่อได้ทันที
     document.getElementById('startDate').value = startStr;
     document.getElementById('endDate').value = endDateStr;
     
     // แปลงเป็นวันที่แบบไทยเพื่อแสดงผล Preview ให้สวยงาม
-    const thaiStart = new Date(startStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-    const thaiEnd = new Date(endDateStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+    const thaiStart = startObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+    const thaiEnd = endObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
     
     // แสดงพรีวิว
     document.getElementById('generalLastXPreview').innerHTML = `ช่วงวันที่: ${thaiStart} ถึง ${thaiEnd}`;
@@ -4654,41 +4635,55 @@ deleteRecordsByDate = async function() {
 // ฟังก์ชันสรุปเพิ่มเติม (ต้องมีเพื่อให้ปุ่มทำงาน)
 // ==============================================
 
-// [🔧 แก้ไข] ฟังก์ชัน summarizeToday
+// [🔧 แก้ไข] ฟังก์ชัน summarizeToday ให้ดึงวันล่าสุดที่มีข้อมูล
 function summarizeToday() {
     if (!currentAccount) {
         showToast("❌ กรุณาเลือกบัญชีก่อน", 'error');
         return;
     }
-    
-    const today = new Date();
-    const startDate = new Date(today.setHours(0, 0, 0, 0));
-    const endDate = new Date(today.setHours(23, 59, 59, 999));
-    
+
+    // ✅ ดึงวันล่าสุดที่มีข้อมูลจริงๆ
+    if (!dailySummaryData || Object.keys(dailySummaryData).length === 0) {
+        calculateDailySummaries();
+        if (Object.keys(dailySummaryData).length === 0) {
+            showToast('⚠️ ไม่มีข้อมูลในบัญชีนี้', 'error');
+            return;
+        }
+    }
+
+    // หาวันที่มากที่สุด (ล่าสุด)
+    const dates = Object.keys(dailySummaryData).sort();
+    const latestDateStr = dates[dates.length - 1]; 
+
+    const startDate = new Date(latestDateStr);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(latestDateStr);
+    endDate.setHours(23, 59, 59, 999);
+
     const summaryResult = generateSummaryData(startDate, endDate);
     if (!summaryResult) return;
-    
-    const thaiDateString = today.toLocaleDateString('th-TH', { 
+
+    const thaiDateString = startDate.toLocaleDateString('th-TH', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
     });
-    
+
     // ✅ เพิ่มกล่องรับข้อความหมายเหตุ
     const remarkInput = prompt("กรุณากรอกหมายเหตุ (ถ้าไม่กรอกจะใช้ 'No comment'):", "No comment") || "No comment";
 
     summaryContext = {
         summaryResult: summaryResult,
-        title: 'สรุปข้อมูลวันนี้',
+        title: 'สรุปข้อมูลวันล่าสุดที่มี', // เปลี่ยนชื่อหัวข้อให้เข้ากับข้อมูลจริง
         dateString: thaiDateString,
-        remark: remarkInput, // ✅ นำข้อความมาแสดง
+        remark: remarkInput,
         type: 'today',
         thaiDateString: thaiDateString,
-        headerLine1: 'สรุปวันนี้ :',
+        headerLine1: 'สรุปวันล่าสุด :',
         headerLine2: 'เงินในบัญชีวันนี้มี =',
-        headerLine3: 'รายการวันนี้'
+        headerLine3: 'รายการวันล่าสุด'
     };
-    
+
     openSummaryOutputModal();
 }
 
@@ -4812,11 +4807,11 @@ function summarize() {
         const dates = Object.keys(dailySummaryData).sort();
         endDateStr = dates[dates.length - 1]; // วันที่มากที่สุด (ล่าสุด)
 
-        const endObj = new Date(endDateStr);
-        const startObj = new Date(endObj);
-        startObj.setDate(endObj.getDate() - days + 1); // ลบจำนวนวัน (+1 เพื่อให้นับวันล่าสุดเป็น 1 วัน)
+        // ✅ แยกปี เดือน วัน เพื่อสร้าง Date Object ให้ตรงกับ Timezone ท้องถิ่นแบบ 100%
+        const [ey, em, ed] = endDateStr.split('-').map(Number);
+        const startObj = new Date(ey, em - 1, ed);
+        startObj.setDate(startObj.getDate() - days + 1); // ลบจำนวนวัน (+1 เพื่อให้นับวันล่าสุดเป็น 1 วัน)
 
-        // แปลงเป็น YYYY-MM-DD แบบปลอดภัย (ป้องกัน Timezone คลาดเคลื่อน)
         const sy = startObj.getFullYear();
         const sm = String(startObj.getMonth() + 1).padStart(2, '0');
         const sd = String(startObj.getDate()).padStart(2, '0');
