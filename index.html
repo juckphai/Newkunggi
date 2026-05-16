@@ -259,7 +259,7 @@
                 </div>
                 
                 <div class="button-container" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
-                  <button type="button" onclick="saveToLocal()" style="flex: 1; background-color: #17a2b8;">💾 บันทึกชั่วคราว</button>
+                  <button type="button" onclick="saveToLocal(false, true)" style="flex: 1; background-color: #17a2b8;">💾 บันทึกชั่วคราว</button>
                   <button type="button" onclick="openExportOptionsModal()" style="flex: 1; background-color: #0d47a1;">💾 บันทึกข้อมูล</button>
                 </div>
                 
@@ -306,11 +306,9 @@
                   </div>
                 </div>
                 
-                <!-- 🟢 ส่วนที่ปรับปรุงตามคำแนะนำ: สรุปวันที่ถึงวันที่ + ย้อนหลัง X วัน -->
                 <div class="summary-subsection" style="text-align: center;">
                   <label class="summary-subsection-header">📆 สรุปวันที่ถึงวันที่</label>
                   
-                  <!-- Radio Buttons สำหรับเลือกโหมด -->
                   <div style="margin-top:10px; margin-bottom:10px; text-align:center;">
                     <label style="margin-right:15px; cursor:pointer;">
                       <input type="radio" name="summaryMode" value="range" checked onchange="toggleGeneralSummaryMode()"> เลือกช่วงวันที่
@@ -320,7 +318,6 @@
                     </label>
                   </div>
 
-                  <!-- Container สำหรับเลือกช่วงวันที่ (ค่าเริ่มต้นแสดง) -->
                   <div id="generalRangeContainer">
                     <div class="centered-date-form horizontal">
                       <div class="centered-date-group">
@@ -334,7 +331,6 @@
                     </div>
                   </div>
 
-                  <!-- Container สำหรับกรอกจำนวนวัน (ซ่อนไว้ก่อน) พร้อมปุ่มคำนวณและพรีวิว -->
                   <div id="generalLastXContainer" style="display: none; margin-top:10px;">
                     <label>จำนวนวัน: 
                       <input type="number" id="summaryLastXDays" min="1" placeholder="เช่น 7, 30" style="width:100px; padding:5px;">
@@ -345,8 +341,7 @@
                     <div id="generalLastXPreview" style="margin-top:10px; font-weight:bold; color: #009688;"></div>
                   </div>
 
-                  <!-- Checkbox แสดงรายละเอียด -->
-<div style="text-align: center; margin-top: 8px;">
+                  <div style="text-align: center; margin-top: 8px;">
                       <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; color: #333;">
                           <input type="checkbox" id="showDetailsRange" onchange="document.getElementById('detailsLimitContainer').style.display = this.checked ? 'flex' : 'none'"> แสดงรายละเอียดรายการ
                       </label>
@@ -357,17 +352,14 @@
                       </div>
                   </div>
 
-                  <!-- ปุ่มสรุปข้อมูล -->
                   <div class="button-container" style="text-align: center; margin-top: 10px;">
                     <button type="button" onclick="summarize()" style="background-color: #009688;">📊 สรุปวันที่ถึงวันที่</button>
                   </div>
                 </div>
 
-                <!-- ✅ ส่วน สรุปผลแต่ละวัน (คงเดิม) -->
                 <div id="daily-summary-section" class="summary-subsection card export-area" style="text-align: center; margin-top: 20px; border-top: 2px solid #4a90e2; padding-top: 15px;">
                   <label class="summary-subsection-header" style="color: #4a90e2; font-size: 18px;">📊 สรุปผลแต่ละวัน</label>
                   
-                  <!-- 🔷 โหมดการเลือกช่วงวันที่ -->
                   <div style="margin-top:15px; text-align:center;">
                     <div style="margin-bottom:10px;">
                       <label>
@@ -380,7 +372,6 @@
                       </label>
                     </div>
 
-                    <!-- 🔹 ส่วนเลือกช่วงวันที่เอง (ค่าเริ่มต้น) -->
                     <div id="rangeContainer">
                       <div class="centered-date-form horizontal" style="justify-content: center;">
                         <div class="centered-date-group">
@@ -394,7 +385,6 @@
                       </div>
                     </div>
 
-                    <!-- 🔹 ส่วนใส่จำนวนวัน (ซ่อนไว้ก่อน) -->
                     <div id="lastXContainer" style="display:none; margin-top:10px;">
                       <label>จำนวนวัน:</label>
                       <input type="number" id="lastXDays" min="1" placeholder="เช่น 7" style="width: 80px; padding: 5px;">
@@ -449,7 +439,7 @@
 </style>
 
 <footer>
-    &copy; 150469 kunggi-phu. All Rights Reserved.
+    &copy; 160569 kunggi-phu. All Rights Reserved.. All Rights Reserved.
 </footer>
 
 <div id="changePasswordModal" class="modal-overlay">
@@ -540,54 +530,193 @@
   </div>
 </div>
 
+<style>
+  /* สไตล์เฉพาะสำหรับหน้าต่าง Export เพื่อไม่ให้กระทบส่วนอื่น */
+  #exportOptionsModal .export-modal-wrapper {
+    max-width: 550px; 
+    width: 90%; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+    padding: 25px; 
+    border-radius: 16px;
+    background-color: #ffffff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+  
+  #exportOptionsModal .modal-header-title {
+    margin-top: 0; 
+    color: #333; 
+    font-size: 1.3rem; 
+    border-bottom: 2px solid #f0f0f0; 
+    padding-bottom: 15px;
+    text-align: center;
+  }
+
+  #exportOptionsModal .grid-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  @media (min-width: 500px) {
+    #exportOptionsModal .grid-buttons {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  #exportOptionsModal .action-btn {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.2s, opacity 0.2s;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  #exportOptionsModal .action-btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+  }
+
+  #exportOptionsModal .custom-export-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 25px;
+  }
+
+  #exportOptionsModal .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  @media (min-width: 500px) {
+    #exportOptionsModal .form-row {
+      flex-direction: row;
+    }
+    #exportOptionsModal .form-row > div {
+      flex: 1;
+    }
+  }
+
+  #exportOptionsModal .input-field {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+  #exportOptionsModal .input-field:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.15);
+  }
+
+  #exportOptionsModal .carry-forward-alert {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    text-align: left;
+  }
+
+  #exportOptionsModal .days-back-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  #exportOptionsModal .days-back-group input { flex: 1.5; }
+  #exportOptionsModal .days-back-group button { flex: 1; box-shadow: none; }
+</style>
+
 <div id="exportOptionsModal" class="modal-overlay">
-  <div class="format-modal-content">
-    <h3>💾 เลือกประเภทการบันทึกข้อมูล</h3>
-    <div class="format-modal-buttons">
-      <button onclick="saveToFile()" style="background-color: #0d47a1;">💾 บันทึกข้อมูลทั้งหมด (ทุกบัญชี)</button>
-      <button onclick="exportSelectedAccount()" style="background-color: #ff9800;">💾 บันทึกบัญชีที่เลือก (ทั้งหมด)</button>
-      <button onclick="initiateSingleDateExport()" style="background-color: #009688;">📅 บันทึกเฉพาะวันที่เลือก (บัญชีนี้)</button>
-      <button onclick="initiateDateRangeExport()" style="background-color: #8e44ad;">📆 บันทึกตามช่วงวันที่ (บัญชีนี้)</button>
-      <button class="btn-cancel" onclick="closeExportOptionsModal()">❌ ยกเลิก</button>
-    </div>
-  </div>
-</div>
+  <div class="format-modal-content export-modal-wrapper">
+    <h3 class="modal-header-title">💾 เลือกประเภทการบันทึกข้อมูล</h3>
 
-<div id="dateRangeExportModal" class="modal-overlay">
-  <div class="format-modal-content">
-    <h3>📆 เลือกช่วงวันที่ที่ต้องการบันทึก</h3>
-    <p>ข้อมูลจากบัญชี: <strong id="dateRangeAccountName"></strong></p>
-    <div class="entry-form" style="margin-bottom: 20px;">
-      <div class="entry-group">
-        <label for="exportStartDate">จากวันที่:</label>
-        <input type="date" id="exportStartDate">
-      </div>
-      <div class="entry-group">
-        <label for="exportEndDate">ถึงวันที่:</label>
-        <input type="date" id="exportEndDate">
-      </div>
+    <div class="grid-buttons">
+      <button class="action-btn" onclick="saveToFile()" style="background-color: #0d47a1;">
+        💾 ทั้งหมด (ทุกบัญชี)
+      </button>
+      <button class="action-btn" onclick="exportSelectedAccount()" style="background-color: #ff9800;">
+        💾 บัญชีนี้ (ทั้งหมด)
+      </button>
+      <button class="action-btn" onclick="initiateSingleDateExport()" style="background-color: #009688;">
+        📅 เฉพาะวันที่เลือก
+      </button>
+      <button class="action-btn" onclick="initiateDateRangeExport()" style="background-color: #8e44ad;">
+        📆 ตามช่วงวันที่
+      </button>
     </div>
-    <div class="format-modal-buttons">
-      <button class="btn-display" onclick="processDateRangeExport()">💾 บันทึกเป็น JSON</button>
-      <button class="btn-cancel" onclick="closeDateRangeExportModal()">❌ ยกเลิก</button>
-    </div>
-  </div>
-</div>
 
-<div id="singleDateExportModal" class="modal-overlay">
-  <div class="format-modal-content">
-    <h3>📅 เลือกวันที่ต้องการบันทึก</h3>
-    <p>ข้อมูลจากบัญชี: <strong id="singleDateAccountName"></strong></p>
-    <div class="entry-form" style="margin-bottom: 20px;">
-      <div class="entry-group">
-        <label for="exportSingleDate">เลือกวันที่:</label>
-        <input type="date" id="exportSingleDate">
+    <div class="custom-export-card">
+      <div style="text-align: center; margin-bottom: 18px;">
+        <span style="font-weight: bold; color: #0d47a1; font-size: 1.1rem;">💾 บันทึก JSON ตามช่วงวันที่</span>
+        <div style="margin-top: 8px; font-size: 0.95rem;">
+          <span style="color: #666;">ข้อมูลจากบัญชี: </span>
+          <span id="exportAccountName" style="font-weight:bold; color:#e91e63; background: #fce4ec; padding: 4px 12px; border-radius: 12px; display: inline-block; margin-top: 5px;">-</span>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom: 15px;">
+        <div>
+          <label for="jsonStartDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem;">จากวันที่:</label>
+          <input type="date" id="jsonStartDate" class="input-field">
+        </div>
+        <div>
+          <label for="jsonEndDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem;">ถึงวันที่:</label>
+          <input type="date" id="jsonEndDate" class="input-field">
+        </div>
+      </div>
+
+      <div class="carry-forward-alert">
+        <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 8px; font-weight: bold; font-size: 0.95rem; margin-bottom: 5px;">
+          <input type="checkbox" id="includeCarryForward" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #d81b60;">
+          คำนวณยอดยกมา
+        </label>
+        <div style="font-size: 0.85rem; padding-left: 26px; line-height: 1.5; opacity: 0.9;">
+          หากเลือก ระบบจะรวมยอดเงินเก่าทั้งหมดก่อนวันที่เลือก มาสร้างเป็นรายการ <b>"ยอดยกมา"</b> เพื่อรักษายอดบัญชีไม่ให้คลาดเคลื่อน
+        </div>
+      </div>
+
+      <div style="margin: 20px 0; display: flex; align-items: center; text-align: center; color: #aaa;">
+        <div style="flex: 1; border-top: 1px solid #ddd;"></div>
+        <span style="padding: 0 10px; font-size: 0.85rem; font-weight: 600; color: #666;">หรือเลือกแบบย้อนหลัง</span>
+        <div style="flex: 1; border-top: 1px solid #ddd;"></div>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem;">จำนวนวันย้อนหลัง (วัน):</label>
+        <div class="days-back-group">
+          <input type="number" id="daysBackInput" class="input-field" placeholder="เช่น 7 หรือ 30">
+          <button type="button" class="action-btn" onclick="calculateDaysBackDates()" style="background-color: #f39c12; color: #fff;">
+            📅 คำนวณวันที่
+          </button>
+        </div>
       </div>
     </div>
-    <div class="format-modal-buttons">
-      <button class="btn-display" onclick="processSingleDateExport()">➡️ ดำเนินการต่อ</button>
-      <button class="btn-cancel" onclick="closeSingleDateExportModal()">❌ ยกเลิก</button>
+    
+    <div class="form-row" style="margin-top: 20px;">
+      <button type="button" class="action-btn" onclick="exportJsonByDateRange()" style="background-color: #009688; flex: 2; font-size: 1rem;">
+        ✅ ยืนยันบันทึก JSON
+      </button>
+      <button type="button" class="action-btn" onclick="closeExportOptionsModal()" style="background-color: #e74c3c; flex: 1; box-shadow: none;">
+        ❌ ปิดหน้าต่าง
+      </button>
     </div>
+
   </div>
 </div>
 
@@ -614,6 +743,62 @@
   </div>
 </div>
 
+<!-- ========== MODAL สำหรับ 📅 เฉพาะวันที่เลือก (Single Date Export) ========== -->
+<div id="singleDateExportModal" class="modal-overlay" style="display: none;">
+  <div class="format-modal-content export-modal-wrapper">
+    <h3 class="modal-header-title">📅 บันทึกข้อมูลรายวัน</h3>
+    <div style="text-align: center; margin-bottom: 15px;">
+      <span style="color: #666;">บัญชีที่เลือก: </span>
+      <span id="singleDateAccountName" style="font-weight:bold; color:#009688; background: #e0f2f1; padding: 4px 12px; border-radius: 12px; display: inline-block;"></span>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label for="exportSingleDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem;">เลือกวันที่ต้องการบันทึก:</label>
+      <input type="date" id="exportSingleDate" class="input-field">
+    </div>
+    
+    <div class="form-row">
+      <button onclick="processSingleDateExport()" class="action-btn" style="background-color: #009688; flex: 1;">
+        ✅ ยืนยัน
+      </button>
+      <button onclick="closeSingleDateExportModal()" class="action-btn" style="background-color: #e74c3c; flex: 1; box-shadow: none;">
+        ❌ ยกเลิก
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL สำหรับ 📆 ตามช่วงวันที่ (Date Range Export) ========== -->
+<div id="dateRangeExportModal" class="modal-overlay" style="display: none;">
+  <div class="format-modal-content export-modal-wrapper">
+    <h3 class="modal-header-title">📆 บันทึกข้อมูลตามช่วงวันที่</h3>
+    <div style="text-align: center; margin-bottom: 15px;">
+      <span style="color: #666;">บัญชีที่เลือก: </span>
+      <span id="dateRangeAccountName" style="font-weight:bold; color:#8e44ad; background: #f3e5f5; padding: 4px 12px; border-radius: 12px; display: inline-block;"></span>
+    </div>
+    
+    <div class="form-row" style="margin-bottom: 20px;">
+      <div>
+        <label for="exportStartDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem;">จากวันที่:</label>
+        <input type="date" id="exportStartDate" class="input-field">
+      </div>
+      <div>
+        <label for="exportEndDate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem;">ถึงวันที่:</label>
+        <input type="date" id="exportEndDate" class="input-field">
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <button onclick="processDateRangeExport()" class="action-btn" style="background-color: #8e44ad; flex: 1;">
+        ✅ ยืนยัน
+      </button>
+      <button onclick="closeDateRangeExportModal()" class="action-btn" style="background-color: #e74c3c; flex: 1; box-shadow: none;">
+        ❌ ยกเลิก
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast-notification"></div>
 <div id="print-container"></div>
 
@@ -622,8 +807,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // ✅✅✅ ตั้งค่า Firebase ใหม่ (ac-juck)
-  // ใช้รูปแบบ Compat เพื่อให้ทำงานร่วมกับ script.js เดิมได้โดยไม่ต้องแก้โค้ด JS
 const firebaseConfig = {
   apiKey: "AIzaSyAn9sZt4GGrpwooP8XuKA3VjrYzPJ4nvvw",
   authDomain: "kunggi-phu.firebaseapp.com",
@@ -633,7 +816,6 @@ const firebaseConfig = {
   appId: "1:172801884398:web:b372300c744fee0d3d33ff"
 };
 
-  // เริ่มต้น Firebase App เพียงครั้งเดียว
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("Firebase Initialized (Project: ac-juck).");
@@ -641,12 +823,11 @@ const firebaseConfig = {
 
   const db = firebase.firestore();
   
-  // ✅ บังคับใช้ Long Polling เพื่อความเสถียร
   db.settings({
     experimentalForceLongPolling: true
   });
 
-  window.db = db; // ยืนยันการผูกกับ window object
+  window.db = db;
 </script>
 
 <script src="script.js"></script>
@@ -654,12 +835,10 @@ const firebaseConfig = {
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      // ใช้ service-worker.js โดยตรง
       navigator.serviceWorker.register('./service-worker.js')
         .then(function(registration) {
           console.log('Service Worker ลงทะเบียนสำเร็จ Scope:', registration.scope);
           
-          // ตรวจสอบการอัปเดต
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             console.log('พบ Service Worker ใหม่กำลังติดตั้ง');
@@ -675,14 +854,12 @@ const firebaseConfig = {
           console.log('การลงทะเบียน Service Worker ล้มเหลว:', error);
         });
 
-      // ตรวจสอบเมื่อ controller เปลี่ยนแปลง
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         console.log('Service Worker controller เปลี่ยนแปลงแล้ว');
       });
     });
   }
 
-  // ตรวจจับเมื่อแอปถูกติดตั้ง
   window.addEventListener('appinstalled', (evt) => {
     console.log('แอปพลิเคชันถูกติดตั้งแล้ว');
     const installGuide = document.getElementById('install-guide');
@@ -692,7 +869,6 @@ const firebaseConfig = {
     localStorage.setItem('pwa_installed', 'true');
   });
 
-  // ตรวจสอบสถานะ PWA
   if (window.matchMedia('(display-mode: standalone)').matches || 
       window.navigator.standalone === true || 
       localStorage.getItem('pwa_installed') === 'true') {
@@ -703,9 +879,8 @@ const firebaseConfig = {
   }
 </script>
 
-<!-- เพิ่มฟังก์ชัน toggleGeneralSummaryMode และ calculateGeneralLastXRange ให้สมบูรณ์ -->
 <script>
-  // ฟังก์ชันสลับโหมดสำหรับการสรุปแบบกำหนดเอง
+  // ฟังก์ชันสลับโหมดสำหรับการสรุปแบบกำหนดเอง (อยู่ใน index.html เท่านั้น)
   function toggleGeneralSummaryMode() {
     const mode = document.querySelector('input[name="summaryMode"]:checked').value;
     const rangeContainer = document.getElementById('generalRangeContainer');
@@ -720,47 +895,45 @@ const firebaseConfig = {
         if(lastXContainer) lastXContainer.style.display = 'none';
     }
     
-    // เคลียร์ข้อความพรีวิวทุกครั้งที่สลับโหมด
     if(previewContainer) previewContainer.innerHTML = '';
   }
 
-  /**
-   * คำนวณช่วงวันที่สำหรับ X วันล่าสุด (โหมดสรุปวันที่ถึงวันที่)
-   */
+  // คำนวณช่วงวันที่สำหรับ X วันล่าสุด (โหมดสรุปวันที่ถึงวันที่)
   function calculateGeneralLastXRange() {
     const daysInput = document.getElementById('summaryLastXDays').value;
     const days = parseInt(daysInput);
     
     if (!days || days <= 0) {
-        showToast('⚠️ กรุณาระบุจำนวนวันที่ต้องการย้อนหลังให้ถูกต้อง', 'error');
+        if (typeof showToast === 'function') {
+            showToast('⚠️ กรุณาระบุจำนวนวันที่ต้องการย้อนหลังให้ถูกต้อง', 'error');
+        } else {
+            alert('⚠️ กรุณาระบุจำนวนวันที่ต้องการย้อนหลังให้ถูกต้อง');
+        }
         return;
     }
     
-    // คำนวณวันที่ย้อนหลัง (นับจากวันนี้)
     const today = new Date();
     const start = new Date(today);
     start.setDate(today.getDate() - days + 1);
     
-    // แปลงรูปแบบเป็น YYYY-MM-DD เพื่อยัดลง input type="date"
     const endStr = today.toISOString().split('T')[0];
     const startStr = start.toISOString().split('T')[0];
     
-    // เซ็ตค่าลงในช่อง Input แบบเงียบๆ เพื่อให้ฟังก์ชัน summarize() ดึงไปใช้ต่อได้ทันที
     document.getElementById('startDate').value = startStr;
     document.getElementById('endDate').value = endStr;
     
-    // แปลงเป็นวันที่แบบไทยเพื่อแสดงผล Preview ให้สวยงาม
     const thaiStart = new Date(startStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
     const thaiEnd = new Date(endStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
     
-    // แสดงพรีวิว
-    document.getElementById('generalLastXPreview').innerHTML = `ช่วงวันที่: ${thaiStart} ถึง ${thaiEnd}`;
+    const previewEl = document.getElementById('generalLastXPreview');
+    if (previewEl) previewEl.innerHTML = `ช่วงวันที่: ${thaiStart} ถึง ${thaiEnd}`;
     
-    showToast('✅ คำนวณช่วงวันที่เรียบร้อย', 'success');
+    if (typeof showToast === 'function') {
+        showToast('✅ คำนวณช่วงวันที่เรียบร้อย', 'success');
+    } else {
+        alert('✅ คำนวณช่วงวันที่เรียบร้อย');
+    }
   }
-
-  // (หมายเหตุ: ฟังก์ชัน toggleDailyMode และ calculateLastXRange สำหรับส่วนสรุปแต่ละวัน 
-  // จะต้องอยู่ใน script.js อยู่แล้ว หากไม่มี ให้เพิ่มใน script.js ตามที่เคยแนะนำ)
 </script>
 
 </body>
