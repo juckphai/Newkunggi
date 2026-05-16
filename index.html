@@ -439,7 +439,7 @@
 </style>
 
 <footer>
-    &copy; 160569 kunggi-phu. All Rights Reserved.. All Rights Reserved.
+    &copy; 170569 kunggi-phu. All Rights Reserved.
 </footer>
 
 <div id="changePasswordModal" class="modal-overlay">
@@ -656,9 +656,9 @@
       <button class="action-btn" onclick="initiateSingleDateExport()" style="background-color: #009688;">
         📅 เฉพาะวันที่เลือก
       </button>
-      <button class="action-btn" onclick="initiateDateRangeExport()" style="background-color: #8e44ad;">
-        📆 ตามช่วงวันที่
-      </button>
+<button class="action-btn" onclick="document.querySelector('.custom-export-card').scrollIntoView({behavior: 'smooth'});" style="background-color: #8e44ad;">
+  ⬇️ เลื่อนไปเลือกช่วงวันที่
+</button>
     </div>
 
     <div class="custom-export-card">
@@ -816,6 +816,7 @@ const firebaseConfig = {
   appId: "1:172801884398:web:b372300c744fee0d3d33ff"
 };
 
+
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log("Firebase Initialized (Project: ac-juck).");
@@ -830,7 +831,7 @@ const firebaseConfig = {
   window.db = db;
 </script>
 
-<script src="script.js"></script>
+<script src="script.js?v=20260517"></script>
 
 <script>
   if ('serviceWorker' in navigator) {

@@ -1,6 +1,6 @@
 {
   "name": "kunggi-phu",
-  "short_name": "kunggi",
+  "short_name": "kunggi-phu",
   "description": "แอปพลิเคชันบันทึกรายรับรายจ่ายส่วนตัว",
   "start_url": "./index.html",
   "id": "/Ac/",

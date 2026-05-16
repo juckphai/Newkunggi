@@ -3085,110 +3085,124 @@ function calculateDaysBackDates() {
     showToast(`📅 คำนวณย้อนหลัง ${days} วันเรียบร้อย`, 'success');
 }
 
-/**
- * Export JSON ตามช่วงวันที่ (พร้อมออปชั่น ยอดยกมา)
- */
+// ==============================================
+// ✅ ฟังก์ชัน Export JSON (แก้ไขเวอร์ชันรองรับมือถือ 100%)
+// ==============================================
 function exportJsonByDateRange() {
     if (!currentAccount) {
         showToast('❌ กรุณาเลือกบัญชี', 'error');
         return;
     }
 
-    const startDate = document.getElementById('jsonStartDate')?.value;
-    const endDate = document.getElementById('jsonEndDate')?.value;
+    const startDateVal = document.getElementById('jsonStartDate')?.value;
+    const endDateVal = document.getElementById('jsonEndDate')?.value;
     const includeCarryForward = document.getElementById('includeCarryForward')?.checked;
 
-    if (!startDate || !endDate) {
+    if (!startDateVal || !endDateVal) {
         showToast('❌ กรุณาเลือกช่วงวันที่', 'error');
         return;
     }
 
-    // หั่นสตริงวันที่ตรงๆ ป้องกันบั๊ก Timezone ของเบราว์เซอร์เลื่อนเวลา
-    const [sy, sm, sd] = startDate.split('-').map(Number);
-    const start = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+    // แก้ไขปัญหา Date บนมือถือ: แยกตัวเลขปี/เดือน/วัน ออกมาสร้าง Date ตรงๆ
+    const [sy, sm, sd] = startDateVal.split('-').map(Number);
+    const [ey, em, ed] = endDateVal.split('-').map(Number);
 
-    const [ey, em, ed] = endDate.split('-').map(Number);
-    const end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+    // สร้างจุดตัดเวลา (Timestamp) สำหรับเปรียบเทียบ
+    const startRange = new Date(sy, sm - 1, sd, 0, 0, 0, 0).getTime();
+    const endRange = new Date(ey, em - 1, ed, 23, 59, 59, 999).getTime();
 
     let filteredRecords = [];
     let carryForwardIncome = 0;
     let carryForwardExpense = 0;
 
+    // ดึงประเภทบัญชี
     const baseTypes = accountTypes.get(currentAccount) || { "รายรับ": [], "รายจ่าย": [] };
     let exportTypes = JSON.parse(JSON.stringify(baseTypes)); 
 
     records.forEach(record => {
         if (record.account !== currentAccount) return;
 
-        const recordDate = parseLocalDateTime(record.dateTime);
+        // แปลงวันที่ของรายการเป็น Timestamp
+        const recordDateObj = parseLocalDateTime(record.dateTime);
+        const recordTime = recordDateObj.getTime();
 
-        if (recordDate >= start && recordDate <= end) {
+        if (recordTime >= startRange && recordTime <= endRange) {
             filteredRecords.push(record);
-        } else if (includeCarryForward && recordDate < start) {
+        } else if (includeCarryForward && recordTime < startRange) {
+            // คำนวณยอดยกมา (ใช้ความแม่นยำระดับ Timestamp)
+            const amt = parseFloat(record.amount) || 0;
             if (baseTypes["รายรับ"].includes(record.type)) {
-                carryForwardIncome += parseFloat(record.amount);
+                carryForwardIncome += amt;
             } else if (baseTypes["รายจ่าย"].includes(record.type)) {
-                carryForwardExpense += parseFloat(record.amount);
+                carryForwardExpense += amt;
             }
         }
     });
 
-    // [แก้ไข] สร้างบิล "ยอดยกมา" เสมอเมื่อมีการติ๊กเลือก (แม้ยอดจะเป็น 0 ก็ตาม)
     if (includeCarryForward) {
         const netBalance = carryForwardIncome - carryForwardExpense;
-        
         const cfType = "ยอดยกมา";
-        const isIncome = netBalance >= 0; // ถ้ายอดเหลือ 0 ให้ถือเป็นฝั่งรายรับ
         
-        if (isIncome && !exportTypes["รายรับ"].includes(cfType)) exportTypes["รายรับ"].push(cfType);
-        if (!isIncome && !exportTypes["รายจ่าย"].includes(cfType)) exportTypes["รายจ่าย"].push(cfType);
+        // ตรวจสอบและเพิ่มประเภท "ยอดยกมา" ลงใน Metadata ของไฟล์
+        if (netBalance >= 0) {
+            if (!exportTypes["รายรับ"].includes(cfType)) exportTypes["รายรับ"].push(cfType);
+        } else {
+            if (!exportTypes["รายจ่าย"].includes(cfType)) exportTypes["รายจ่าย"].push(cfType);
+        }
 
-        // เซ็ตเวลาให้บิลยอดยกมาอยู่ตอนเที่ยงคืนตรงของวันเริ่มต้น
+        // สร้างรายการยอดยกมา (เซ็ตเวลาเป็น 00:00 ของวันที่เริ่มต้น)
         const cfDateTime = `${sy}-${String(sm).padStart(2, '0')}-${String(sd).padStart(2, '0')} 00:00`;
 
         const carryForwardRecord = {
-            id: "CF_" + Date.now(),
+            id: "CF_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
             dateTime: cfDateTime,
             type: cfType,
-            description: "ยอดยกมาจากรอบบัญชีก่อนหน้า",
+            description: "ยอดยกมาจากรอบบัญชีก่อนหน้า (" + startDateVal + ")",
             amount: Math.abs(netBalance),
             account: currentAccount,
-            createdBy: "System",
-            createdTime: new Date().toISOString(),
-            editedBy: null,
-            editedTime: null
+            createdBy: "System-Auto",
+            createdTime: new Date().toISOString()
         };
 
-        filteredRecords.unshift(carryForwardRecord); 
+        // เอาไปไว้บนสุดของรายการ
+        filteredRecords.unshift(carryForwardRecord);
     }
 
     if (filteredRecords.length === 0) {
-        showToast('❌ ไม่พบข้อมูลในช่วงวันที่เลือก', 'warning');
+        showToast('⚠️ ไม่พบข้อมูลในช่วงที่เลือก', 'warning');
         return;
     }
 
+    // แพ็กข้อมูล
     const exportData = {
         accountName: currentAccount,
         isDateRangeExport: true,
-        exportStartDate: startDate,
-        exportEndDate: endDate,
+        exportStartDate: startDateVal,
+        exportEndDate: endDateVal,
         recordCount: filteredRecords.length,
         exportTimestamp: new Date().toISOString(),
         records: filteredRecords,
         accountTypes: exportTypes
     };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    
-    const cfText = includeCarryForward ? "_รวมยอดยกมา" : "";
-    const fileName = `${currentAccount}_${startDate}_ถึง_${endDate}${cfText}.json`;
-    
-    link.href = URL.createObjectURL(blob);
-    link.download = fileName;
-    link.click();
-
-    showToast(`💾 บันทึก JSON ${filteredRecords.length} รายการสำเร็จ`, 'success');
+    // ส่งออกไฟล์
+    try {
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const link = document.createElement('a');
+        const fileName = `${currentAccount}_${startDateVal}_ถึง_${endDateVal}${includeCarryForward ? '_รวมยอดยกมา' : ''}.json`;
+        
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast(`💾 บันทึก JSON (${filteredRecords.length} รายการ) สำเร็จ`, 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('❌ การบันทึกไฟล์ล้มเหลว', 'error');
+    }
 }
 
 // ==============================================
