@@ -2030,7 +2030,7 @@ function toggleRecordsVisibility() {
 }
 
 /**
- * ลบข้อมูลตามวันที่ (ปรับปรุงให้ใช้ ID)
+ * ลบข้อมูลตามวันที่ (ปรับปรุงให้ใช้ ID และเพิ่มระบบความปลอดภัย)
  */
 async function deleteRecordsByDate() {
     const dateInput = document.getElementById('deleteByDateInput');
@@ -2049,11 +2049,13 @@ async function deleteRecordsByDate() {
         return;
     }
     
-    const confirmDelete = confirm(
-        `คุณแน่ใจหรือไม่ว่าจะลบข้อมูลทั้งหมด ${recordsToDelete.length} รายการ ของวันที่ ${selectedDate}?\n\n*** การกระทำนี้ไม่สามารถย้อนกลับได้! ***`
+    // --- 🔒 ระบบความปลอดภัย: ให้พิมพ์ 555 เพื่อยืนยัน ---
+    const confirmInput = prompt(
+        `⚠️ คำเตือน: คุณกำลังจะลบข้อมูลทั้งหมด ${recordsToDelete.length} รายการ ของวันที่ ${selectedDate}\n\n*** การกระทำนี้ไม่สามารถย้อนกลับได้! ***\n\nเพื่อยืนยันการลบ กรุณาพิมพ์ตัวเลข 555 ลงในช่องด้านล่าง:`
     );
     
-    if (confirmDelete) {
+    if (confirmInput === "555") {
+        // หากผู้ใช้พิมพ์ 555 ถูกต้อง ให้ดำเนินการลบ
         records = records.filter(record => !recordsToDelete.includes(record));
         
         displayRecords();
@@ -2072,8 +2074,14 @@ async function deleteRecordsByDate() {
                 showToast(`❌ ลบออนไลน์ขัดข้อง`, 'error');
             }
         } else {
-            showToast(`✓ ลบข้อมูลสำเร็จ`, 'success');
+            showToast(`✅ ลบข้อมูลสำเร็จ`, 'success');
         }
+    } else if (confirmInput !== null) {
+        // กรณีพิมพ์มาแต่ไม่ใช่ 555 (ไม่ได้กดยกเลิก)
+        showToast(`❌ ยกเลิกการลบ (รหัสยืนยันไม่ถูกต้อง)`, 'error');
+    } else {
+        // กรณีกดยกเลิก (Cancel)
+        showToast(`ℹ️ ยกเลิกการลบข้อมูล`, 'info');
     }
 }
 
