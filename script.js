@@ -2150,7 +2150,7 @@ function updateImportAccountSelect() {
 }
 
 /**
- * นำเข้ารายการจากบัญชีอื่น
+ * นำเข้ารายการจากบัญชีอื่น (ฉบับแก้ไข)
  */
 async function importEntriesFromAccount() {
     const sourceAccount = document.getElementById('importAccountSelect').value;
@@ -2169,8 +2169,9 @@ async function importEntriesFromAccount() {
         return;
     }
 
+    // กรองเอาเฉพาะรายการจากบัญชีต้นทางและวันที่ที่เลือก
     const recordsToImport = records.filter(record => {
-        return record.account === sourceAccount && record.dateTime.startsWith(importDateStr);
+        return record.account === sourceAccount && record.dateTime && record.dateTime.startsWith(importDateStr);
     });
 
     if (recordsToImport.length === 0) {
@@ -2178,54 +2179,71 @@ async function importEntriesFromAccount() {
         return;
     }
 
-    const confirmImport = confirm(`พบ ${recordsToImport.length} รายการในบัญชี "${sourceAccount}" ของวันที่ ${importDateStr}\n\nคุณต้องการคัดลอกรายการทั้งหมดมายังบัญชี "${currentAccount}" หรือไม่? (ข้อมูลซ้ำจะถูกข้าม)`);
+    const confirmImport = confirm(`พบ ${recordsToImport.length} รายการในบัญชี "${sourceAccount}" ของวันที่ ${importDateStr}\n\nคุณต้องการคัดลอกรายการทั้งหมดมายังบัญชี "${currentAccount}" หรือไม่?`);
 
     if (confirmImport) {
         let importedCount = 0;
         let skippedCount = 0;
+        const syncPromises = [];
         
+        // กรองข้อมูลเฉพาะของบัญชีปลายทางปัจจุบันเพื่อเอาไว้เช็กซ้ำ
+        const currentAccountRecords = records.filter(r => r.account === currentAccount);
+
         recordsToImport.forEach(recordToAdd => {
-            // ✅ ตรวจสอบซ้ำด้วย ID (ถ้ามี) หรือใช้ข้อมูลเก่า
-            const isDuplicate = records.some(existingRecord => 
-                (existingRecord.id && existingRecord.id === recordToAdd.id) ||
-                (existingRecord.account === currentAccount &&
-                 existingRecord.dateTime === recordToAdd.dateTime &&
+            // ตรวจสอบซ้ำเฉพาะในบัญชีปลายทางเท่านั้น
+            const isDuplicate = currentAccountRecords.some(existingRecord => 
+                (existingRecord.dateTime === recordToAdd.dateTime &&
                  existingRecord.amount === recordToAdd.amount &&
                  existingRecord.description === recordToAdd.description &&
                  existingRecord.type === recordToAdd.type)
             );
+
             if (!isDuplicate) {
-                // ✅ สร้าง ID ใหม่สำหรับรายการที่นำเข้า
+                // สร้าง ID ใหม่สำหรับรายการที่จะนำเข้า เพื่อป้องกัน ID ซ้ำกับต้นทาง
+                const newId = Date.now() + Math.random().toString(36).substr(2, 9) + "_imp";
+                
                 const newEntry = { 
                     ...recordToAdd, 
-                    id: Date.now() + Math.random().toString(36).substr(2, 9) + "_import",
-                    account: currentAccount 
+                    id: newId,
+                    account: currentAccount,
+                    createdBy: getCurrentUserIdentifier() + " (Imported)",
+                    createdTime: new Date().toISOString()
                 };
+
                 records.push(newEntry);
+                
+                // ถ้าล็อกอินอยู่ ให้เตรียมส่งขึ้น Firebase
+                if (currentUser) {
+                    syncPromises.push(addTransactionRealtime(newEntry));
+                }
                 importedCount++;
             } else {
                 skippedCount++;
             }
         });
         
-        displayRecords();
-        // ✅ อัปเดตสรุปแต่ละวันเมื่อข้อมูลเปลี่ยนแปลง (เฉพาะข้อมูล ไม่แสดงผล)
-        calculateDailySummaries();
-        saveToLocal();
-        
-        if (currentUser) {
-            showToast('☁️ กำลังอัปเดตข้อมูลออนไลน์...', 'info');
-            try {
-                await saveToFirebase();
-            } catch (err) {
-                console.error("Auto-sync failed:", err);
+        if (importedCount > 0) {
+            displayRecords();
+            calculateDailySummaries();
+            saveToLocal();
+            
+            if (syncPromises.length > 0) {
+                showToast(`⏳ กำลังซิงค์ข้อมูล ${importedCount} รายการขึ้น Server...`, 'info');
+                Promise.all(syncPromises)
+                    .then(() => showToast(`✅ นำเข้าและซิงค์ข้อมูลสำเร็จ! (+${importedCount})`, 'success'))
+                    .catch(() => showToast(`⚠️ นำเข้าสำเร็จแต่ซิงค์บางรายการล้มเหลว`, 'warning'));
+            } else {
+                showToast(`✅ นำเข้าข้อมูลสำเร็จ! (+${importedCount})`, 'success');
             }
+        } else {
+            showToast(`ℹ️ ไม่มีการเพิ่มข้อมูล (ทุกรายการมีอยู่แล้วในบัญชีปลายทาง)`, 'warning');
         }
 
-        showToast(`✓ คัดลอกข้อมูลสำเร็จ! เพิ่ม ${importedCount} รายการใหม่, ข้าม ${skippedCount} รายการที่ซ้ำซ้อน`, 'success');
+        if (skippedCount > 0 && importedCount > 0) {
+            console.log(`Skipped ${skippedCount} duplicate items.`);
+        }
     }
 }
-
 // ==============================================
 // ฟังก์ชันจัดการข้อมูลสรุป (หลัก)
 // ==============================================
@@ -3204,7 +3222,6 @@ function exportJsonByDateRange() {
         showToast('❌ การบันทึกไฟล์ล้มเหลว', 'error');
     }
 }
-
 // ==============================================
 // ฟังก์ชันจัดการไฟล์ (บันทึก/โหลด)
 // ==============================================
